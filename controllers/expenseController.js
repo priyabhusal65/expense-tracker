@@ -1,4 +1,5 @@
 const { Expense } = require('../models');
+const { Op } = require('sequelize');
 
 // Create a new expense
 exports.createExpense = async (req, res) => {
@@ -23,9 +24,21 @@ exports.createExpense = async (req, res) => {
 // Get all expenses for the logged-in user
 exports.getExpenses = async (req, res) => {
   try {
+    const { category, startDate, endDate, sortBy, order } = req.query;
+
+    const whereClause = { userId: req.user.id };
+
+    if (category) {
+      whereClause.category = category;
+    }
+
+    if (startDate && endDate) {
+      whereClause.date = { [Op.between]: [startDate, endDate] };
+    }
+
     const expenses = await Expense.findAll({
-      where: { userId: req.user.id },
-      order: [['date', 'DESC']],
+      where: whereClause,
+      order: [[sortBy || 'date', order || 'DESC']],
     });
 
     res.status(200).json({ expenses });
@@ -33,7 +46,6 @@ exports.getExpenses = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-
 // Get a single expense by id
 exports.getExpenseById = async (req, res) => {
   try {
