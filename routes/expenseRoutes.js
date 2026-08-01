@@ -7,9 +7,14 @@ const {
   getExpenseById,
   updateExpense,
   deleteExpense,
+  getSummary,
+  getMonthlySummary
 } = require('../controllers/expenseController');
 
 router.use(authMiddleware); // applies to ALL routes below this line
+
+router.get('/summary', getSummary);
+router.get('/summary/monthly', getMonthlySummary);
 
 router.post('/', createExpense);
 router.get('/', getExpenses);

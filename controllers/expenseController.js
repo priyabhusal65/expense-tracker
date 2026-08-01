@@ -102,3 +102,56 @@ exports.deleteExpense = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+// Summary: total spent + breakdown by category
+exports.getSummary = async (req, res) => {
+  try {
+    const { Op, fn, col } = require('sequelize');
+    const userId = req.user.id;
+
+    // Total spent overall
+    const totalResult = await Expense.findOne({
+      where: { userId },
+      attributes: [[fn('SUM', col('amount')), 'total']],
+      raw: true,
+    });
+
+    // Breakdown by category
+    const categoryBreakdown = await Expense.findAll({
+      where: { userId },
+      attributes: ['category', [fn('SUM', col('amount')), 'total']],
+      group: ['category'],
+      raw: true,
+    });
+
+    res.status(200).json({
+      totalSpent: totalResult.total || 0,
+      categoryBreakdown,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Summary: monthly totals
+exports.getMonthlySummary = async (req, res) => {
+  try {
+    const { fn, col } = require('sequelize');
+    const userId = req.user.id;
+
+    const monthlyTotals = await Expense.findAll({
+      where: { userId },
+      attributes: [
+        [fn('DATE_FORMAT', col('date'), '%Y-%m'), 'month'],
+        [fn('SUM', col('amount')), 'total'],
+      ],
+      group: [fn('DATE_FORMAT', col('date'), '%Y-%m')],
+      order: [[fn('DATE_FORMAT', col('date'), '%Y-%m'), 'DESC']],
+      raw: true,
+    });
+
+    res.status(200).json({ monthlyTotals });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
