@@ -15,9 +15,21 @@ const Expenses = () => {
 
   const [editingId, setEditingId] = useState(null); // tracks which expense is being edited
 
+  const [filters, setFilters] = useState({
+    category: '',
+    sortBy: 'date',
+    order: 'DESC',
+  });
+
   const fetchExpenses = async () => {
     try {
-      const data = await getExpenses();
+      setLoading(true);
+      const params = {};
+      if (filters.category) params.category = filters.category;
+      params.sortBy = filters.sortBy;
+      params.order = filters.order;
+
+      const data = await getExpenses(params);
       setExpenses(data.expenses);
     } catch (err) {
       setError('Failed to load expenses');
@@ -28,10 +40,14 @@ const Expenses = () => {
 
   useEffect(() => {
     fetchExpenses();
-  }, []);
+  }, [filters]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleFilterChange = (e) => {
+    setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
@@ -82,7 +98,6 @@ const Expenses = () => {
     }
   };
 
-  if (loading) return <div>Loading expenses...</div>;
   if (error) return <div style={{ color: 'red' }}>{error}</div>;
 
   return (
@@ -109,8 +124,36 @@ const Expenses = () => {
 
       <h2>Your Expenses</h2>
 
-      {expenses.length === 0 ? (
-        <p>No expenses yet. Add your first one!</p>
+      <div style={{ marginBottom: '1rem' }}>
+        <label>Category: </label>
+        <select name="category" value={filters.category} onChange={handleFilterChange}>
+          <option value="">All</option>
+          <option value="Food">Food</option>
+          <option value="Transport">Transport</option>
+          <option value="Rent">Rent</option>
+          <option value="Bills">Bills</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="Shopping">Shopping</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <label style={{ marginLeft: '1rem' }}>Sort by: </label>
+        <select name="sortBy" value={filters.sortBy} onChange={handleFilterChange}>
+          <option value="date">Date</option>
+          <option value="amount">Amount</option>
+          <option value="title">Title</option>
+        </select>
+
+        <select name="order" value={filters.order} onChange={handleFilterChange}>
+          <option value="DESC">Descending</option>
+          <option value="ASC">Ascending</option>
+        </select>
+      </div>
+
+      {loading ? (
+        <p>Loading expenses...</p>
+      ) : expenses.length === 0 ? (
+        <p>No expenses match these filters.</p>
       ) : (
         <table border="1" cellPadding="8">
           <thead>
