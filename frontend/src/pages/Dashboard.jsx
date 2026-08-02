@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { getSummary, getMonthlySummary } from '../api/expenseApi';
-import { Link } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
   const [summary, setSummary] = useState(null);
   const [monthly, setMonthly] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,47 +25,63 @@ const Dashboard = () => {
     fetchSummary();
   }, []);
 
-  if (loading) return <div>Loading dashboard...</div>;
-  if (error) return <div style={{ color: 'red' }}>{error}</div>;
-
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <h2>Welcome, {user?.name}!</h2>
-        <button onClick={logout}>Logout</button>
+      <Navbar />
+      <div className="page">
+        <h2>Dashboard</h2>
+
+        {loading ? (
+          <p>Loading dashboard...</p>
+        ) : error ? (
+          <p className="error-text">{error}</p>
+        ) : (
+          <>
+            <div className="stat-row">
+              <div className="stat-card">
+                <div className="label">Total Spent</div>
+                <div className="value">${summary?.totalSpent || '0.00'}</div>
+              </div>
+            </div>
+
+            <div className="card">
+              <h3>Spending by Category</h3>
+              {summary?.categoryBreakdown?.length > 0 ? (
+                <table className="ledger">
+                  <tbody>
+                    {summary.categoryBreakdown.map((item, index) => (
+                      <tr key={index}>
+                        <td><span className="tag">{item.category}</span></td>
+                        <td className="amount">${item.total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p style={{ color: 'var(--slate)' }}>No expenses yet.</p>
+              )}
+            </div>
+
+            <div className="card">
+              <h3>Monthly Totals</h3>
+              {monthly?.length > 0 ? (
+                <table className="ledger">
+                  <tbody>
+                    {monthly.map((item, index) => (
+                      <tr key={index}>
+                        <td>{item.month}</td>
+                        <td className="amount">${item.total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p style={{ color: 'var(--slate)' }}>No monthly data yet.</p>
+              )}
+            </div>
+          </>
+        )}
       </div>
-
-      <nav>
-        <Link to="/dashboard">Dashboard</Link> | <Link to="/expenses">Expenses</Link>
-      </nav>
-
-      <h3>Total Spent: ${summary?.totalSpent || 0}</h3>
-
-      <h3>Spending by Category</h3>
-      {summary?.categoryBreakdown?.length > 0 ? (
-        <ul>
-          {summary.categoryBreakdown.map((item, index) => (
-            <li key={index}>
-              {item.category}: ${item.total}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No expenses yet.</p>
-      )}
-
-      <h3>Monthly Totals</h3>
-      {monthly?.length > 0 ? (
-        <ul>
-          {monthly.map((item, index) => (
-            <li key={index}>
-              {item.month}: ${item.total}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No monthly data yet.</p>
-      )}
     </div>
   );
 };

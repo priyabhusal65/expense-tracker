@@ -32,9 +32,9 @@ const Login = () => {
   };
 
   return (
-    <div>
-      <h2>Login</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+    <div className="auth-page">
+      <h2>Welcome back</h2>
+      {error && <p className="error-text">{error}</p>}
       <form onSubmit={handleSubmit}>
         <div>
           <label>Email</label>
@@ -57,11 +57,11 @@ const Login = () => {
           />
         </div>
         <button type="submit" disabled={loading}>
-          {loading ? 'Logging in...' : 'Login'}
+          {loading ? 'Logging in...' : 'Log in'}
         </button>
       </form>
-      <p>
-        Don't have an account? <Link to="/register">Register</Link>
+      <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: 'var(--slate)' }}>
+        Don't have an account? <Link to="/register" style={{ color: 'var(--gold-dark)', fontWeight: 600 }}>Register</Link>
       </p>
     </div>
   );

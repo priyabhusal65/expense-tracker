@@ -32,10 +32,10 @@ const Register = () => {
   };
 
   return (
-    <div>
-      <h2>Register</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {success && <p style={{ color: 'green' }}>{success}</p>}
+    <div className="auth-page">
+      <h2>Create your account</h2>
+      {error && <p className="error-text">{error}</p>}
+      {success && <p className="success-text">{success}</p>}
       <form onSubmit={handleSubmit}>
         <div>
           <label>Name</label>
@@ -72,8 +72,8 @@ const Register = () => {
           {loading ? 'Registering...' : 'Register'}
         </button>
       </form>
-      <p>
-        Already have an account? <Link to="/login">Login</Link>
+      <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: 'var(--slate)' }}>
+        Already have an account? <Link to="/login" style={{ color: 'var(--gold-dark)', fontWeight: 600 }}>Log in</Link>
       </p>
     </div>
   );
