@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getExpenses, createExpense } from '../api/expenseApi';
+import { getExpenses, createExpense, updateExpense, deleteExpense } from '../api/expenseApi';
 import { Link } from 'react-router-dom';
 
 const Expenses = () => {
@@ -8,14 +8,12 @@ const Expenses = () => {
   const [error, setError] = useState('');
 
   const [formData, setFormData] = useState({
-    title: '',
-    amount: '',
-    category: '',
-    date: '',
-    description: '',
+    title: '', amount: '', category: '', date: '', description: '',
   });
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const [editingId, setEditingId] = useState(null); // tracks which expense is being edited
 
   const fetchExpenses = async () => {
     try {
@@ -42,13 +40,45 @@ const Expenses = () => {
     setSubmitting(true);
 
     try {
-      await createExpense(formData);
+      if (editingId) {
+        await updateExpense(editingId, formData);
+        setEditingId(null);
+      } else {
+        await createExpense(formData);
+      }
       setFormData({ title: '', amount: '', category: '', date: '', description: '' });
-      fetchExpenses(); // refresh the list to show the new expense
+      fetchExpenses();
     } catch (err) {
-      setFormError(err.response?.data?.message || 'Failed to add expense');
+      setFormError(err.response?.data?.message || 'Failed to save expense');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleEdit = (expense) => {
+    setEditingId(expense.id);
+    setFormData({
+      title: expense.title,
+      amount: expense.amount,
+      category: expense.category,
+      date: expense.date,
+      description: expense.description || '',
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setFormData({ title: '', amount: '', category: '', date: '', description: '' });
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this expense?')) return;
+
+    try {
+      await deleteExpense(id);
+      fetchExpenses();
+    } catch (err) {
+      setError('Failed to delete expense');
     }
   };
 
@@ -61,51 +91,20 @@ const Expenses = () => {
         <Link to="/dashboard">Dashboard</Link> | <Link to="/expenses">Expenses</Link>
       </nav>
 
-      <h2>Add New Expense</h2>
+      <h2>{editingId ? 'Edit Expense' : 'Add New Expense'}</h2>
       {formError && <p style={{ color: 'red' }}>{formError}</p>}
       <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="title"
-          placeholder="Title"
-          value={formData.title}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="number"
-          name="amount"
-          placeholder="Amount"
-          step="0.01"
-          value={formData.amount}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="text"
-          name="category"
-          placeholder="Category"
-          value={formData.category}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="date"
-          name="date"
-          value={formData.date}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="text"
-          name="description"
-          placeholder="Description (optional)"
-          value={formData.description}
-          onChange={handleChange}
-        />
+        <input type="text" name="title" placeholder="Title" value={formData.title} onChange={handleChange} required />
+        <input type="number" name="amount" placeholder="Amount" step="0.01" value={formData.amount} onChange={handleChange} required />
+        <input type="text" name="category" placeholder="Category" value={formData.category} onChange={handleChange} required />
+        <input type="date" name="date" value={formData.date} onChange={handleChange} required />
+        <input type="text" name="description" placeholder="Description (optional)" value={formData.description} onChange={handleChange} />
         <button type="submit" disabled={submitting}>
-          {submitting ? 'Adding...' : 'Add Expense'}
+          {submitting ? 'Saving...' : editingId ? 'Update Expense' : 'Add Expense'}
         </button>
+        {editingId && (
+          <button type="button" onClick={handleCancelEdit}>Cancel</button>
+        )}
       </form>
 
       <h2>Your Expenses</h2>
@@ -116,11 +115,7 @@ const Expenses = () => {
         <table border="1" cellPadding="8">
           <thead>
             <tr>
-              <th>Title</th>
-              <th>Amount</th>
-              <th>Category</th>
-              <th>Date</th>
-              <th>Description</th>
+              <th>Title</th><th>Amount</th><th>Category</th><th>Date</th><th>Description</th><th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -131,6 +126,10 @@ const Expenses = () => {
                 <td>{expense.category}</td>
                 <td>{expense.date}</td>
                 <td>{expense.description || '-'}</td>
+                <td>
+                  <button onClick={() => handleEdit(expense)}>Edit</button>
+                  <button onClick={() => handleDelete(expense.id)}>Delete</button>
+                </td>
               </tr>
             ))}
           </tbody>
