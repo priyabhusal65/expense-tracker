@@ -30,7 +30,7 @@ exports.setBudget = async (req, res) => {
 exports.getBudgetStatus = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { month } = req.query; // e.g. "2026-08"
+    const { month } = req.query;
 
     if (!month) {
       return res.status(400).json({ message: 'Month query param is required' });
@@ -38,9 +38,10 @@ exports.getBudgetStatus = async (req, res) => {
 
     const budget = await Budget.findOne({ where: { userId, month } });
 
-    // Calculate total spent this month
+    const [year, monthNum] = month.split('-').map(Number);
     const startDate = `${month}-01`;
-    const endDate = `${month}-31`; // safe upper bound, MySQL handles short months fine here
+    const lastDay = new Date(year, monthNum, 0).getDate(); // correctly handles 28/29/30/31
+    const endDate = `${month}-${String(lastDay).padStart(2, '0')}`;
 
     const spentResult = await Expense.findOne({
       where: {
@@ -54,17 +55,14 @@ exports.getBudgetStatus = async (req, res) => {
     const spent = parseFloat(spentResult.total) || 0;
 
     if (!budget) {
-      return res.status(200).json({
-        hasBudget: false,
-        spent,
-      });
+      return res.status(200).json({ hasBudget: false, spent });
     }
 
     const limit = parseFloat(budget.limitAmount);
     const remaining = limit - spent;
     const percentUsed = (spent / limit) * 100;
 
-    let status = 'good'; // good, warning, over
+    let status = 'good';
     let message = '';
 
     if (spent > limit) {
