@@ -1,16 +1,12 @@
 const sequelize = require('../config/database');
 const User = require('./user');
 const Expense = require('./expense');
+const Budget = require('./budget');
 
-// A User has many Expenses
-User.hasMany(Expense, {
-  foreignKey: 'userId',
-  onDelete: 'CASCADE',
-});
+User.hasMany(Expense, { foreignKey: 'userId', onDelete: 'CASCADE' });
+Expense.belongsTo(User, { foreignKey: 'userId' });
 
-// Each Expense belongs to a User
-Expense.belongsTo(User, {
-  foreignKey: 'userId',
-});
+User.hasMany(Budget, { foreignKey: 'userId', onDelete: 'CASCADE' });
+Budget.belongsTo(User, { foreignKey: 'userId' });
 
-module.exports = { sequelize, User, Expense };
+module.exports = { sequelize, User, Expense, Budget };
